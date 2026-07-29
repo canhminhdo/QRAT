@@ -115,6 +115,9 @@ TwoTargetOpWithTwoParam         XXminusYY|XXplusYY
 "on"        { return KW_ON; }
 "off"       { return KW_OFF; }
 "seed"      { return KW_SEED; }
+"backend"   { return KW_BACKEND; }
+"mqt"       { return KW_MQT; }
+"dw"        { return KW_DW; }
 
 "|0>"		{ return KW_KET_ZERO; }
 "|1>"		{ return KW_KET_ONE; }

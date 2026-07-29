@@ -1,0 +1,27 @@
+set show timing off .
+set random seed 0 .
+set backend dw .
+
+// Two consecutive measurements: since post-measurement states are stored
+// unnormalized in the exact backend, the second measurement's
+// probabilities must be conditional (divided by the current squared norm),
+// not raw. The probability of ending in |0> is exactly
+// P(m1=0) * P(m2=0 | m1=0) = 1/2 * 1/2 = 1/4; a raw (unconditional)
+// second probability would wrongly give 1/2 * 1/4 = 1/8.
+prog SEQMEAS is
+var q : qubit;
+init
+    q := |0>;
+prop
+    target := P(q, |0>);
+begin
+    H[q];
+    if M[q] = 0 then H[q]; else skip; fi;
+    if M[q] = 0 then skip; else skip; fi;
+end
+
+search in SEQMEAS with =>! such that P(q, |0>) .
+
+psearch in SEQMEAS with =>! such that P(q, |0>) .
+
+quit .

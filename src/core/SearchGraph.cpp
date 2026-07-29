@@ -61,7 +61,7 @@ void SearchGraph::procSkipStm(SkipStmNode *skipStm, State *currentState, StmNode
 void SearchGraph::procUnitaryStm(UnitaryStmNode *unitaryStm, State *currentState, StmNode *nextStm, const Timer &timer) {
     auto v = currentState->current;
     auto v1 = ddSim->applyGate(unitaryStm, v);
-    if (v1.p->ref == 0) {
+    if (ddSim->isUnreferenced(v1)) {
         ddSim->incRef(v1);
     }
     auto [newState, inCache] = makeState(new State(nextStm, v1, currentState->stateNr, currentState->depth + 1));
@@ -130,11 +130,11 @@ void SearchGraph::procAtomicStm(AtomicStmNode *atomicStm, State *currentState, S
         handleInCache(currentState->stateNr, newState->stateNr);
     }
 }
-void SearchGraph::procCondBranch(State *currentState, StmNode *nextStm, qc::VectorDD &v, qc::fp prob, int outcome, const Timer &timer) {
-    if (prob == 0.0 || v.isZeroTerminal()) {
+void SearchGraph::procCondBranch(State *currentState, StmNode *nextStm, QState &v, const Prob &prob, int outcome, const Timer &timer) {
+    if (prob.isZero() || v.isZeroTerminal()) {
         return;
     }
-    if (v.p->ref == 0) {
+    if (ddSim->isUnreferenced(v)) {
         ddSim->incRef(v);
     }
     auto [newState, inCache] = makeState(new StateWithOutcome(nextStm, v, currentState->stateNr,
@@ -169,7 +169,7 @@ void SearchGraph::showPath(int stateNr, bool endState) const {
     }
     std::cout << "state " << s->stateNr << ", ";
     std::cout << "quantum state:\n";
-    s->current.printVector<dd::vNode>();
+    ddSim->printState(s->current);
     if (!endState && !s->isFinalState()) {
         std::cout << "===[ ";
         s->pc->info();
@@ -188,7 +188,7 @@ void SearchGraph::showState(int stateNr) const {
     }
     std::cout << "state " << s->stateNr << ", ";
     std::cout << "quantum state:\n";
-    s->current.printVector<dd::vNode>();
+    ddSim->printState(s->current);
 }
 
 void SearchGraph::showBasisInfo(int stateNr, std::string basis, bool isProb) const {
@@ -200,12 +200,10 @@ void SearchGraph::showBasisInfo(int stateNr, std::string basis, bool isProb) con
     if (s == nullptr) {
         return;
     }
-    const auto c = s->current.getValueByPath(currentProg->getNqubits(), basis);
     if (isProb) {
-        const auto prob = std::norm(c);
-        std::cout << Tty(Tty::YELLOW) << "Probability of basis state |" << basis << "> in state " << stateNr << " is "<< prob << Tty(Tty::RESET) << std::endl;
+        std::cout << Tty(Tty::YELLOW) << "Probability of basis state |" << basis << "> in state " << stateNr << " is "<< ddSim->basisProb(s->current, basis) << Tty(Tty::RESET) << std::endl;
     } else {
-        std::cout << Tty(Tty::YELLOW) << "Amplitude of basis state |" << basis << "> in state " << stateNr << " is "<< c << Tty(Tty::RESET) << std::endl;
+        std::cout << Tty(Tty::YELLOW) << "Amplitude of basis state |" << basis << "> in state " << stateNr << " is "<< ddSim->basisAmplitude(s->current, basis) << Tty(Tty::RESET) << std::endl;
     }
 }
 
@@ -220,7 +218,7 @@ void SearchGraph::printState(State *s, bool recursive) const {
     s->pc->dump(false);
     std::cout << "[Depth]: " << s->depth << "\n";
     std::cout << "[Quantum State]: \n";
-    s->current.printVector<dd::vNode>();
+    ddSim->printState(s->current);
     std::cout << "[Next States]: ";
     for (auto [i, prob] : s->nextStates) {
         std::cout << i << " ";

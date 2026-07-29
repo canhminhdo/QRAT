@@ -6,7 +6,7 @@
 
 #include <Configuration.hpp>
 
-StateSpaceGraph::StateSpaceGraph(SyntaxProg *currentProg, DDSimulation *ddSim, char *property, std::vector<char *> *args) {
+StateSpaceGraph::StateSpaceGraph(SyntaxProg *currentProg, SimulationBase *ddSim, char *property, std::vector<char *> *args) {
     this->currentProg = currentProg;
     this->ddSim = ddSim;
     this->property = property;
@@ -81,7 +81,7 @@ void StateSpaceGraph::printCommand() {
 
 void StateSpaceGraph::dump() const {
     std::cout << "Initial state: \n";
-    ddSim->getInitialState().printVector<dd::vNode>();
+    ddSim->printState(ddSim->getInitialState());
     std::cout << "State Transition Graph\n";
     std::cout << "-------------------\n";
     if (seenStates.size() != 0) {

@@ -4,6 +4,20 @@
 
 #include "model/DTMC.hpp"
 #include "Configuration.hpp"
+#include "dd/exact/Dw.hpp"
+#include <iomanip>
+#include <sstream>
+
+namespace {
+// 30-significant-digit decimal of an exact probability (PRISM/Storm model
+// syntax cannot express exact Q[w] values, so exactness necessarily ends here)
+std::string exactProbToString(const Prob &p) {
+    std::ostringstream os;
+    os << std::setprecision(30)
+       << (p.exact ? p.exact->toComplexFloat().real() : dd::exact::Float(p.raw()));
+    return os.str();
+}
+}// namespace
 
 DTMC::DTMC(SyntaxProg *currentProg, StateSpaceGraph *graphSearch) {
     this->currentProg = currentProg;
@@ -17,6 +31,10 @@ DTMC::~DTMC() {
 }
 
 void DTMC::addHeader() {
+    if (Configuration::backend == Configuration::SimBackend::EXACT) {
+        fileWriter->writeLine("// NOTE: transition probabilities are 30-digit decimal approximations of "
+                              "exact Q[w] values, which are not expressible in PRISM syntax.");
+    }
     fileWriter->writeLine("dtmc");
     fileWriter->writeEmptyLine();
     fileWriter->writeLine("module " + std::string(Token::name(currentProg->getName())));
@@ -34,12 +52,33 @@ void DTMC::buildModel() {
         auto &nextStates = state->nextStates;
         std::string transition = "\t[] s=" + std::to_string(stateNr) + " -> ";
         if (nextStates.size() > 0) {
-            for (auto it = nextStates.begin(); it != nextStates.end(); it++) {
-                const auto &[stateId, prob] = *it;
-                transition += std::to_string(prob) + ":(s'=" + std::to_string(stateId) + ")";
-                if (std::next(it) != nextStates.end()) {
-                    transition += " + ";
+            if (Configuration::backend != Configuration::SimBackend::EXACT) {
+                for (auto it = nextStates.begin(); it != nextStates.end(); it++) {
+                    const auto &[stateId, prob] = *it;
+                    transition += std::to_string(prob.raw()) + ":(s'=" + std::to_string(stateId) + ")";
+                    if (std::next(it) != nextStates.end()) {
+                        transition += " + ";
+                    }
                 }
+            } else {
+                // print branches 1..n-1 as 30-digit decimals and the LAST
+                // branch as the textual complement 1 - sum(printed values),
+                // so the row sums to exactly 1 textually (the exact row
+                // probabilities sum to exactly 1, but their printed
+                // decimals are rounded)
+                dd::exact::Float printedSum{0};
+                for (std::size_t i = 0; i + 1 < nextStates.size(); i++) {
+                    auto probStr = exactProbToString(nextStates[i].second);
+                    printedSum += dd::exact::Float(probStr);
+                    transition += probStr + ":(s'=" + std::to_string(nextStates[i].first) + ") + ";
+                }
+                auto last = dd::exact::Float(1) - printedSum;
+                if (last < 0) {
+                    last = 0;
+                }
+                std::ostringstream os;
+                os << std::setprecision(45) << last;
+                transition += os.str() + ":(s'=" + std::to_string(nextStates.back().first) + ")";
             }
             transition += ";";
             fileWriter->writeLine(transition);

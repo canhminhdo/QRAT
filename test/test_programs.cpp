@@ -28,3 +28,35 @@ TEST(ProgTest, groverProg) {
     int res = std::system("bash testScript.sh grover");
     EXPECT_EQ(res, 0);
 }
+
+// exact backen
+
+TEST(ProgTest, teleportExactProg) {
+    int res = std::system("bash testScript.sh teleport-exact");
+    EXPECT_EQ(res, 0);
+}
+
+TEST(ProgTest, loopExactProg) {
+    int res = std::system("bash testScript.sh loop-exact");
+    EXPECT_EQ(res, 0);
+}
+
+TEST(ProgTest, groverExactProg) {
+    int res = std::system("bash testScript.sh grover-exact");
+    EXPECT_EQ(res, 0);
+}
+
+TEST(ProgTest, seqmeasExactProg) {
+    int res = std::system("bash testScript.sh seqmeas-exact");
+    EXPECT_EQ(res, 0);
+}
+
+TEST(ProgTest, unsupportedExactProg) {
+    int res = std::system("bash testScript.sh unsupported-exact");
+    EXPECT_EQ(res, 0);
+}
+
+TEST(ProgTest, mixedBackendProg) {
+    int res = std::system("bash testScript.sh mixed-backend");
+    EXPECT_EQ(res, 0);
+}

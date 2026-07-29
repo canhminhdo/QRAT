@@ -8,13 +8,13 @@
 #include "SearchGraph.hpp"
 #include "Search.hpp"
 #include "ast/WhileStmNode.hpp"
-#include "dd/DDSimulation.hpp"
+#include "dd/SimulationBase.hpp"
 #include "utility/Timer.hpp"
 #include "utility/macros.hpp"
 
 class StateTransitionGraph : public SearchGraph, public Search {
 public:
-    StateTransitionGraph(SyntaxProg *currentProg, DDSimulation *ddSim, ExpNode *propExp, Search::Type type, int numSols,
+    StateTransitionGraph(SyntaxProg *currentProg, SimulationBase *ddSim, ExpNode *propExp, Search::Type type, int numSols,
                          int maxDepth, bool probMode = false);
 
     void handleInCache(int currStateId, int nextStateId) override;
@@ -40,6 +40,9 @@ protected:
     void gaussSeidelMethod(int maxIter = 100000, qc::fp tol = 1e-9);
 
     void jacobiMethod(int maxIter = 100000, qc::fp tol = 1e-9);
+
+    // solves the reachability linear system directly over the field Q[w]
+    void exactGaussianElimination();
 
     std::unordered_set<int> backwardReachable();
 

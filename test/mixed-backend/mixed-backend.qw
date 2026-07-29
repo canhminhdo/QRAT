@@ -1,0 +1,31 @@
+set show timing off .
+set random seed 0 .
+
+prog LOOP is
+var q : qubit;
+init
+    q := |1>;
+prop
+    target := P(q, |0>);
+begin
+    H[q];
+    while M[q] = 1 do H[q]; od;
+end
+
+search in LOOP with =>! such that P(q, |0>) .
+
+psearch in LOOP with =>! such that P(q, |0>) .
+
+set backend dw .
+
+search in LOOP with =>! such that P(q, |0>) .
+
+psearch in LOOP with =>! such that P(q, |0>) .
+
+set backend mqt .
+
+search in LOOP with =>! such that P(q, |0>) .
+
+set backend bogus .
+
+quit .

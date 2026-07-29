@@ -17,9 +17,9 @@ set(CLANG_TIDY_ANALYSIS
 set(DEPLOY
     ON CACHE BOOL "Set deployment configuration to ON for CI" FORCE)
 
-if(DEPLOY)
-    set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
-endif()
+#if(DEPLOY)
+#    set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+#endif()
 
 macro(TODAY RESULT)
     if(WIN32)

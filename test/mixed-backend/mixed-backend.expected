@@ -1,0 +1,50 @@
+Show timing is off.
+Random seed is set to 0.
+==========================================
+prog LOOP
+==========================================
+search in LOOP with =>! such that P(q, |0>) .
+
+Solution 1 (state 2)
+states: 3
+quantum state: 
+0: (1,0)
+
+No more solutions.
+states: 4
+==========================================
+psearch in LOOP with =>! such that P(q, |0>) .
+
+Result: 1
+
+states: 4
+Simulation backend is set to exact.
+==========================================
+search in LOOP with =>! such that P(q, |0>) .
+
+Solution 1 (state 2)
+states: 3
+quantum state: 
+0: (1 + 0*w + 0*w^2 + 0*w^3) / (sqrt(2)^1 * 1)
+
+No more solutions.
+states: 4
+==========================================
+psearch in LOOP with =>! such that P(q, |0>) .
+
+Result: (1 + 0*w + 0*w^2 + 0*w^3) / (sqrt(2)^0 * 1) (approx. 1)
+
+states: 4
+Simultation backend is set to mqt.
+==========================================
+search in LOOP with =>! such that P(q, |0>) .
+
+Solution 1 (state 2)
+states: 3
+quantum state: 
+0: (1,0)
+
+No more solutions.
+states: 4
+[31mError: syntax error, unexpected IDENTIFIER, expecting KW_MQT or KW_DW at line 29[0m
+qrat> 

@@ -1,8 +1,15 @@
 # QRAT: A Probabilistic Reachability Analysis Tool for Quantum Programs
-This repository presents a probabilistic reachability analysis tool called `QRAT` for quantum programs. The tool is written in C++ using [MQT Core](https://github.com/cda-tum/mqt-core) to simulate quantum computation.
+This repository presents a probabilistic reachability analysis tool called `QRAT` for quantum programs. The tool is written in C++ using alternative backends [MQT Core](https://github.com/cda-tum/mqt-core) and [exact-dd](https://github.com/canhminhdo/exact-dd) to simulate quantum computation.
+
+## Simulation backends
+QRAT supports two alternative backends for simulating quantum computation, selected with the `set backend` command:
+
+- `set backend mqt .` (default) - MQT Core's floating-point decision diagram package. Supports the full gate set, including parametrized rotations.
+- `set backend dw .` - the exact decision diagram package from [exact-dd](https://github.com/canhminhdo/exact-dd), whose amplitudes are exact elements of Q[ω] (ω = e^{iπ/4}). Only the Clifford+T gate set is supported (`I, X, Y, Z, H, S, Sdg, T, Tdg, V, Vdg, SX, SXdg, SWAP, iSWAP, iSWAPdg, DCX` and their controlled variants).
 
 ## Dependencies
 - [MQT Core](https://github.com/cda-tum/mqt-core) - The Backbone of the Munich Quantum Toolkit
+- [exact-dd](https://github.com/canhminhdo/exact-dd) - Exact decision diagram package for quantum computation
 - [C++ Compilier](https://clang.llvm.org) - Supporting C++17
 - [CMake](https://cmake.org) - A minimum version of 3.19
 - [google/googletest](https://github.com/google/googletest) - A testing framework for C++ (only used in tests)

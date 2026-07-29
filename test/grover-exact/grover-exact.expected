@@ -1,0 +1,22 @@
+Show timing is off.
+Random seed is set to 0.
+Simulation backend is set to exact.
+==========================================
+prog GROVER
+==========================================
+search in GROVER with =>! such that P(q0, |1>) and P(q1, |1>) and P(q2, |0>) and P(q3, |0>) and P(q4, |0>) .
+
+Solution 1 (state 118)
+states: 119
+quantum state: 
+00011: (23161 + 0*w + 0*w^2 + 0*w^3) / (sqrt(2)^29 * 1)
+
+No more solutions.
+states: 126
+==========================================
+psearch in GROVER with =>! such that P(q0, |1>) and P(q1, |1>) and P(q2, |0>) and P(q3, |0>) and P(q4, |0>) .
+
+Result: (536431921 + 0*w + 0*w^2 + 0*w^3) / (sqrt(2)^58 * 1) (approx. 0.999182)
+
+states: 126
+Bye.

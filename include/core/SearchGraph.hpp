@@ -10,8 +10,9 @@
 #include "ast/SkipStmNode.hpp"
 #include "ast/StmNode.hpp"
 #include "ast/WhileStmNode.hpp"
-#include "dd/DDSimulation.hpp"
+#include "dd/SimulationBase.hpp"
 #include "utility/HashUtil.hpp"
+#include "utility/Prob.hpp"
 #include "utility/Timer.hpp"
 #include <ast/AtomicStmNode.hpp>
 
@@ -21,14 +22,14 @@ public:
 
     struct State {
         int stateNr;
-        StmNode *pc;           // program counter
-        qc::VectorDD current{};// current quantum state
+        StmNode *pc;      // program counter
+        QState current{};// current quantum state
         int parent;
         vector<int> otherParents; // other parents of this state;
-        std::vector<std::pair<int, qc::fp>> nextStates;
+        std::vector<std::pair<int, Prob>> nextStates;
         int depth{0};
 
-        State(StmNode *pc, qc::VectorDD current, int parent = -1, int depth = 0)
+        State(StmNode *pc, QState current, int parent = -1, int depth = 0)
             : pc{pc}, current{std::move(current)}, parent{parent}, depth{depth} {
         }
 
@@ -52,7 +53,7 @@ public:
     struct StateWithOutcome : public State {
         int outcome{0};
 
-        StateWithOutcome(StmNode *pc, qc::VectorDD current, int parent = -1, int depth = 0, int outcome = 0)
+        StateWithOutcome(StmNode *pc, QState current, int parent = -1, int depth = 0, int outcome = 0)
             : State(pc, std::move(current), parent, depth), outcome{outcome} {
         }
 
@@ -67,13 +68,13 @@ public:
     struct StateHash {
         std::size_t operator()(const State *s) const {
             return HashUtil::combinedHash(std::hash<StmNode *>()(s->pc),
-                                          std::hash<dd::vNode *>()(dynamic_cast<dd::vNode *>(s->current.p)));
+                                          std::hash<const void *>()(s->current.node()));
         }
     };
 
     struct StateEqual {
         bool operator()(const State *lhs, const State *rhs) const {
-            return lhs->pc == rhs->pc && lhs->current.p == rhs->current.p;
+            return lhs->pc == rhs->pc && lhs->current.node() == rhs->current.node();
         }
     };
 
@@ -97,7 +98,7 @@ public:
 
     void procAtomicStm(AtomicStmNode *atomicStm, State *currentState, StmNode *nextStm, const Timer &timer);
 
-    void procCondBranch(State *currentState, StmNode *nextStm, qc::VectorDD &v, qc::fp prob, int outcome, const Timer &timer);
+    void procCondBranch(State *currentState, StmNode *nextStm, QState &v, const Prob &prob, int outcome, const Timer &timer);
 
     StmNode *getNextStatement(StmNode *stm);
 
@@ -127,7 +128,7 @@ protected:
     std::vector<State *> seenStates;
 
     SyntaxProg *currentProg;
-    DDSimulation *ddSim;
+    SimulationBase *ddSim;
 };
 
 #endif//BASEGRAPH_HPP

@@ -6,12 +6,16 @@
 
 #include <Configuration.hpp>
 
+#include "dd/mqt/DDSimulation.hpp"
+#include "dd/exact/DwSimulation.hpp"
 #include "model/DTMC.hpp"
 #include "model/PrismRunner.hpp"
 #include "utility/Tty.hpp"
 #include <core/StateSpaceGraph.hpp>
 #include <iostream>
 #include "model/RunnerFactory.hpp"
+#include "dd/SimulationFactory.hpp"
+#include <exception>
 
 void Interpreter::setCurrentProg(Token progName) {
     currentProg = new SyntaxProg(progName);
@@ -32,7 +36,12 @@ bool Interpreter::existProg(Token progName) {
 
 void Interpreter::initDDSimulation() {
     if (currentProg) {
-        ddSim = new DDSimulation(currentProg);
+        try {
+            ddSim = SimulationFactory::create(currentProg);
+        } catch (const std::exception &e) {
+            std::cout << Tty(Tty::RED) << e.what() << Tty(Tty::RESET) << std::endl;
+            ddSim = nullptr;
+        }
     } else {
         std::cerr << "Error: No program to simulate" << std::endl;
     }
@@ -47,16 +56,23 @@ void Interpreter::initGraphSearch(char *property, std::vector<char *> *args) {
 }
 
 void Interpreter::execute() {
-    assert(ddSim != nullptr);
-    assert(graphSearch != nullptr);
+    if (ddSim == nullptr || graphSearch == nullptr) {
+        std::cout << Tty(Tty::RED) << "Error: no simulation available" << Tty(Tty::RESET) << std::endl;
+        return;
+    }
     graphSearch->printCommand();
     graphSearch->search();
 }
 
 void Interpreter::executePCheck() {
-    assert(ddSim != nullptr);
-    assert(graphSearch != nullptr);
-    assert(runner != nullptr);
+    if (ddSim == nullptr || graphSearch == nullptr || runner == nullptr) {
+        std::cout << Tty(Tty::RED) << "Error: no simulation available" << Tty(Tty::RESET) << std::endl;
+        if (runner != nullptr) {
+            delete runner;
+            runner = nullptr;
+        }
+        return;
+    }
     Timer timer(true);
     auto *stateSpaceGraph = dynamic_cast<StateSpaceGraph *>(graphSearch);
     if (runner->isAvailable() && stateSpaceGraph != nullptr) {
@@ -78,6 +94,9 @@ void Interpreter::initializeSearch(int progName, ExpNode *propExp, Search::Type 
     assert(currentProg != nullptr && progName == currentProg->getName());
     cleanSearch();
     initDDSimulation();
+    if (ddSim == nullptr) {
+        return;
+    }
     initGraphSearch(propExp, type, numSols, maxDepth, probMode);
 }
 
@@ -96,6 +115,9 @@ void Interpreter::initializePCheck(int progName, char *property, std::vector<cha
     assert(currentProg != nullptr && progName == currentProg->getName());
     cleanSearch();
     initDDSimulation();
+    if (ddSim == nullptr) {
+        return;
+    }
     initGraphSearch(property, args);
     initRunner(args);
 }

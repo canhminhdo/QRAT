@@ -110,6 +110,7 @@ extern std::vector<char *> pendingFiles;
 %token KW_SHOW KW_PATH
 %token KW_SET KW_TIMING KW_ON KW_OFF
 %token KW_SEED
+%token KW_BACKEND KW_MQT KW_DW
 %token EOL
 %token <str> KW_ARGUMENT
 /* for atomic statement */
@@ -554,9 +555,10 @@ loadFile    :   KW_LOAD filePath expectedDot
 filePath    :   FILENAME
             ;
 
-/* set showing time and random seed */
+/* set showing time, random seed, and simulation backend */
 setParam    :   setShowingTime
             |   setRandomSeed
+            |   setBackend
             ;
 
 setShowingTime  :   KW_SET KW_SHOW KW_TIMING KW_ON expectedDot
@@ -583,6 +585,18 @@ setRandomSeed   :   KW_SET KW_KET_RANDOM KW_SEED number expectedDot
                             std::cout << "Random seed is set to "<< Configuration::seed << "." << std::endl;
                         }
                 ;
+
+setBackend  :   KW_SET KW_BACKEND KW_MQT expectedDot
+                    {
+                        Configuration::backend = Configuration::SimBackend::MQT;
+                        std::cout << "Simultation backend is set to mqt." << std::endl;
+                    }
+            |   KW_SET KW_BACKEND KW_DW expectedDot
+                    {
+                        Configuration::backend = Configuration::SimBackend::EXACT;
+                        std::cout << "Simulation backend is set to exact." << std::endl;
+                    }
+            ;
 
 /* pcheck command */
 pcheck  :   KW_PCHECK KW_IN token

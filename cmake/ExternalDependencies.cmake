@@ -27,6 +27,7 @@ endfunction()
 
 check_submodule_present(mqt-core)
 check_submodule_present(googletest)
+check_submodule_present(exact-dd)
 
 set(MQT_CORE_VERSION 2.7.0 CACHE STRING "MQT Core version")
 

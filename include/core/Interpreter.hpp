@@ -9,7 +9,7 @@
 #include "StateTransitionGraph.hpp"
 #include "core/SyntaxProg.hpp"
 #include "core/Token.hpp"
-#include "dd/DDSimulation.hpp"
+#include "dd/SimulationBase.hpp"
 #include "core/SearchGraph.hpp"
 
 class Interpreter {
@@ -50,10 +50,10 @@ public:
     void showBasisInfo(int stateId, std::string basis, bool isProb = true);
 
 private:
-    SyntaxProg *currentProg;
-    DDSimulation *ddSim;
-    SearchGraph *graphSearch;
-    Runner *runner;
+    SyntaxProg *currentProg{nullptr};
+    SimulationBase *ddSim{nullptr};
+    SearchGraph *graphSearch{nullptr};
+    Runner *runner{nullptr};
     std::unordered_map<int, SyntaxProg *> savedProgs;
 };
 #endif//INTERPRETER_HPP

@@ -1,0 +1,15 @@
+set show timing off .
+set random seed 0 .
+set backend dw .
+
+prog RXTEST is
+var q : qubit;
+init
+    q := |0>;
+begin
+    RX[q](0.5);
+end
+
+search in RXTEST with =>! such that true .
+
+quit .

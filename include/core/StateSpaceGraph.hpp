@@ -9,7 +9,7 @@
 
 class StateSpaceGraph : public SearchGraph {
 public:
-    StateSpaceGraph(SyntaxProg *currentProg, DDSimulation *ddSim, char *property, std::vector<char *> *args);
+    StateSpaceGraph(SyntaxProg *currentProg, SimulationBase *ddSim, char *property, std::vector<char *> *args);
     ~StateSpaceGraph() override;
 
     void search() override;

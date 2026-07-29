@@ -12,6 +12,7 @@
 #include "core/SyntaxProg.hpp"
 #include "dd/DDDefinitions.hpp"
 #include "dd/Package_fwd.hpp"
+#include "dd/SimulationBase.hpp"
 #include "ir/QuantumComputation.hpp"
 #include <unordered_map>
 
@@ -21,31 +22,27 @@ using qc::OP_NAME_TO_TYPE;
 using qc::Qubit;
 using qc::StandardOperation;
 
-class DDSimulation {
+class DDSimulation : public SimulationBase {
 public:
     DDSimulation(SyntaxProg *prog);
 
-    ~DDSimulation();
+    ~DDSimulation() override;
 
-    qc::VectorDD getInitialState() const;
+    bool isExact() const override {
+        return false;
+    }
+
+    QState getInitialState() const override;
 
     qc::VectorDD generateRandomState();
 
     void initialize();
 
-    void initQVarMap();
-
     void initQState();
-
-    void initProperty(ExpNode *expNode);
-
-    void initProperty2();
 
     qc::Controls buildControls(UnitaryStmNode *stm);
 
     qc::Targets buildTargets(UnitaryStmNode *stm);
-
-    qc::Qubit getQubit(Symbol *symbol);
 
     qc::MatrixDD buildProjector(PropExpNode *propNode);
 
@@ -55,23 +52,35 @@ public:
 
     qc::VectorDD applyGate(UnitaryStmNode *stm, qc::VectorDD v);
 
+    QState applyGate(UnitaryStmNode *stm, const QState &v) override;
+
     void incRef(qc::VectorDD &v);
 
     void decRef(qc::VectorDD &v);
 
-    bool garbageCollect(bool force = false);
+    void incRef(const QState &v) override;
+
+    void decRef(const QState &v) override;
+
+    bool isUnreferenced(const QState &v) const override;
+
+    bool garbageCollect(bool force = false) override;
 
     std::pair<qc::VectorDD, qc::VectorDD> measure(MeasExpNode *expr, qc::VectorDD v);
 
-    std::tuple<qc::VectorDD, qc::fp, qc::VectorDD, qc::fp> measureWithProb(MeasExpNode *expr, qc::VectorDD v);
+    MeasureResult measureWithProb(MeasExpNode *expr, const QState &v) override;
 
     qc::VectorDD project(qc::MatrixDD projector, qc::VectorDD v);
 
-    bool test(qc::VectorDD v, ExpNode *expNode);
-
     qc::fp fidelity(qc::VectorDD v1, qc::VectorDD v2);
 
-    void dump();
+    void printState(const QState &v) const override;
+
+    std::string basisProb(const QState &v, const std::string &basis) const override;
+
+    std::string basisAmplitude(const QState &v, const std::string &basis) const override;
+
+    void dump() override;
 
     void analyze();
 
@@ -80,18 +89,6 @@ public:
             throw std::runtime_error("Qubit index out of range");
         }
     }
-
-    struct PropHash {
-        std::size_t operator()(const PropExpNode *node) const {
-            return node->getHash();
-        }
-    };
-
-    struct PropEqual {
-        bool operator()(const PropExpNode *lhs, const PropExpNode *rhs) const {
-            return lhs->isEqual(*rhs);
-        }
-    };
 
     std::unordered_map<PropExpNode *, qc::MatrixDD, ::DDSimulation::PropHash, ::DDSimulation::PropEqual>
     getProjectorMap();
@@ -128,20 +125,15 @@ public:
 
 #undef DEFINE_SINGLE_TARGET_OPERATION
 
-private:
-    // program
-    SyntaxProg *prog;
-    std::size_t nqubits{};
+protected:
+    void ensureProjector(PropExpNode *propNode) override;
 
-    // dd package
+    bool testProp(const QState &v, PropExpNode *propNode) override;
+
+private:
+    // mqt dd package
     using DDPackage = typename dd::Package<DDSimulationPackageConfig>;
     std::unique_ptr<DDPackage> dd;
-
-    // mapping from variable to qubit and vice versa
-    using QuantumVariableMap = std::map<int, int>;
-    using RevQuantumVariableMap = std::map<int, int>;
-    QuantumVariableMap qVarMap;
-    RevQuantumVariableMap revQVarMap;
 
     // storing initial values
     using VectorDDMap = std::map<int, qc::VectorDD>;
@@ -150,8 +142,5 @@ private:
 
     // for properties
     std::unordered_map<PropExpNode *, qc::MatrixDD, PropHash, PropEqual> projectorMap;
-
-    // for random sgit statate generation
-    std::mt19937_64 mt{};
 };
 #endif//DDSIMULATION_HPP

@@ -2,12 +2,10 @@
 // Created by CanhDo on 2024/11/21.
 //
 
-#include "dd/DDSimulation.hpp"
+#include "dd/mqt/DDSimulation.hpp"
 #include "Configuration.hpp"
-#include "ast/BoolExpNode.hpp"
 #include "ast/InitExpNode.hpp"
 #include "ast/KetExpNode.hpp"
-#include "ast/OpExpNode.hpp"
 #include "ast/UnitaryStmNode.hpp"
 #include "core/Token.hpp"
 #include "core/VarSymbol.hpp"
@@ -15,12 +13,12 @@
 #include "dd/GateMatrixDefinitions.hpp"
 #include "dd/Operations.hpp"
 #include "dd/Package.hpp"
-#include "dd/GateMatrixDefinitionExt.hpp"
+#include "dd/mqt/GateMatrixDefinitionExt.hpp"
+#include <sstream>
 
 // using DDPackage = typename dd::Package<DDSimulationPackageConfig>;
-DDSimulation::DDSimulation(SyntaxProg *prog) : prog{prog}, dd{std::make_unique<DDPackage>(prog->getNqubits())},
-                                               nqubits{prog->getNqubits()} {
-    mt.seed(Configuration::seed);
+DDSimulation::DDSimulation(SyntaxProg *prog) : SimulationBase{prog},
+                                               dd{std::make_unique<DDPackage>(prog->getNqubits())} {
     initialize();
 }
 
@@ -28,7 +26,7 @@ DDSimulation::~DDSimulation() {
     dd->garbageCollect(true);
 }
 
-qc::VectorDD DDSimulation::getInitialState() const {
+QState DDSimulation::getInitialState() const {
     return initialState;
 }
 
@@ -50,40 +48,16 @@ qc::VectorDD DDSimulation::generateRandomState() {
     return v2;
 }
 
-void DDSimulation::initProperty(ExpNode *expNode) {
-    if (auto *propNode = dynamic_cast<PropExpNode *>(expNode)) {
-        if (projectorMap.find(propNode) == projectorMap.end()) {
-            projectorMap[propNode] = buildProjector(propNode);
-            // projectorMap[propNode].printMatrix<dd::mNode>(nqubits);
-        }
-        return;
-    }
-    if (auto *opExpNode = dynamic_cast<OpExpNode *>(expNode)) {
-        switch (opExpNode->getType()) {
-            case OpExpType::NOT:
-                initProperty(opExpNode->getRight());
-                break;
-            case OpExpType::AND:
-            case OpExpType::OR:
-                initProperty(opExpNode->getLeft());
-                initProperty(opExpNode->getRight());
-                break;
-            default:
-                throw std::runtime_error("Unsupported property type");
-        }
+void DDSimulation::ensureProjector(PropExpNode *propNode) {
+    if (projectorMap.find(propNode) == projectorMap.end()) {
+        projectorMap[propNode] = buildProjector(propNode);
+        // projectorMap[propNode].printMatrix<dd::mNode>(nqubits);
     }
 }
 
 std::unordered_map<PropExpNode *, qc::MatrixDD, DDSimulation::PropHash, DDSimulation::PropEqual>
 DDSimulation::getProjectorMap() {
     return projectorMap;
-}
-
-void DDSimulation::initProperty2() {
-    for (auto &prop: prog->getPropTab().getPropTab()) {
-        auto *expNode = prop.second;
-        initProperty(expNode);
-    }
 }
 
 qc::Controls DDSimulation::buildControls(UnitaryStmNode *stm) {
@@ -102,11 +76,6 @@ qc::Targets DDSimulation::buildTargets(UnitaryStmNode *stm) {
         targets.push_back(tQubit);
     }
     return targets;
-}
-
-qc::Qubit DDSimulation::getQubit(Symbol *symbol) {
-    assert(dynamic_cast<VarSymbol *>(symbol) != nullptr);
-    return qVarMap[symbol->getName()];
 }
 
 qc::MatrixDD DDSimulation::buildProjector(PropExpNode *propNode) {
@@ -139,7 +108,7 @@ qc::MatrixDD DDSimulation::buildProjectorOne(PropExpNode *propNode) {
             auto v1 = dd->makeBasisState(1, std::vector<dd::BasisStates>{dd::BasisStates::minus});
             return dd->outerProduct(v1, target);
         }
-        throw std::runtime_error("Only support initialization with |0>, |1> or initial state");
+        throw std::runtime_error("Only support initialization with |0>, |1>, |+>, |->, or initial state");
     }
     if (auto *initNode = dynamic_cast<InitExpNode *>(propNode->getExpr())) {
         return dd->outerProduct(initStateMap[initNode->getVar()->getName()], target);
@@ -169,42 +138,7 @@ qc::MatrixDD DDSimulation::buildProjectorTwo(PropExpNode *propNode) {
 }
 
 void DDSimulation::initialize() {
-    initQVarMap();
     initQState();
-}
-
-void DDSimulation::initQVarMap() {
-    std::vector<VarSymbol *> vars = prog->getVars();
-    // lexically sort variables by names in lexicographical order
-    sort(vars.begin(), vars.end(), [](VarSymbol *v1, VarSymbol *v2) {
-        std::string a = std::string(Token::name(v1->getName()));
-        std::string b = std::string(Token::name(v2->getName()));
-        // Find where the numeric part starts
-        auto isDigit = [](char c) { return std::isdigit(c); };
-
-        auto itA = std::find_if(a.begin(), a.end(), isDigit);
-        auto itB = std::find_if(b.begin(), b.end(), isDigit);
-
-        // Extract string prefix
-        std::string prefixA(a.begin(), itA);
-        std::string prefixB(b.begin(), itB);
-
-        // Compare prefixes
-        if (prefixA != prefixB) {
-            return prefixA < prefixB;
-        }
-
-        // Extract numeric part
-        int numA = std::stoi(std::string(itA, a.end()));
-        int numB = std::stoi(std::string(itB, b.end()));
-
-        // Compare numbers
-        return numA < numB;
-    });
-    for (int i = 0; i < vars.size(); i++) {
-        qVarMap.insert({vars.at(i)->getName(), i});
-        revQVarMap.insert({i, vars.at(i)->getName()});
-    }
 }
 
 void DDSimulation::initQState() {
@@ -241,12 +175,11 @@ void DDSimulation::initQState() {
     }
     assert(!vars.empty());
     // building initial state
-    initialState = initStateMap[vars.at(0)->getName()];
+    initialState = initStateMap[revQVarMap[0]];
     for (int i = 1; i < vars.size(); i++) {
-        initialState = dd->kronecker(initStateMap[vars.at(i)->getName()], initialState, i);
+        initialState = dd->kronecker(initStateMap[revQVarMap[i]], initialState, i);
     }
-    if (initialState.p->ref == 0)
-        dd->incRef(initialState);
+    dd->incRef(initialState);
 }
 
 qc::VectorDD DDSimulation::applyGate(UnitaryStmNode *stm, qc::VectorDD v) {
@@ -257,17 +190,10 @@ qc::VectorDD DDSimulation::applyGate(UnitaryStmNode *stm, qc::VectorDD v) {
     auto gate = dd::getDD<DDSimulationPackageConfig>(&op, *dd);
     auto v1 = dd->multiply(gate, v);
     return v1;
-    // if (targets.size() == 1) {
-    //     auto gate = dd::getStandardOperationDD<DDSimulationPackageConfig>(&op, *dd, controls, targets.front(), false);
-    //     auto v1 = dd->multiply(gate, v);
-    //     return v1;
-    // }
-    // if (targets.size() == 2) {
-    //     auto gate = dd::getStandardOperationDD<DDSimulationPackageConfig>(&op, *dd, controls, targets.front(), targets.back(), false);
-    //     auto v1 = dd->multiply(gate, v);
-    //     return v1;
-    // }
-    // throw std::runtime_error("Only support 1 & 2 qubit gate");
+}
+
+QState DDSimulation::applyGate(UnitaryStmNode *stm, const QState &v) {
+    return applyGate(stm, v.mqt());
 }
 
 void DDSimulation::incRef(qc::VectorDD &v) {
@@ -276,6 +202,18 @@ void DDSimulation::incRef(qc::VectorDD &v) {
 
 void DDSimulation::decRef(qc::VectorDD &v) {
     dd->decRef(v);
+}
+
+void DDSimulation::incRef(const QState &v) {
+    dd->incRef(v.mqt());
+}
+
+void DDSimulation::decRef(const QState &v) {
+    dd->decRef(v.mqt());
+}
+
+bool DDSimulation::isUnreferenced(const QState &v) const {
+    return v.mqt().p->ref == 0;
 }
 
 bool DDSimulation::garbageCollect(bool force) {
@@ -290,62 +228,51 @@ std::pair<qc::VectorDD, qc::VectorDD> DDSimulation::measure(MeasExpNode *expr, q
     return {v0, v1};
 }
 
-std::tuple<qc::VectorDD, qc::fp, qc::VectorDD, qc::fp>
-DDSimulation::measureWithProb(MeasExpNode *expr, qc::VectorDD v) {
+SimulationBase::MeasureResult DDSimulation::measureWithProb(MeasExpNode *expr, const QState &v) {
     auto var = expr->getVar();
     auto target = qVarMap[var->getName()];
-    return dd->measureOneQubit(v, target);
+    auto e = v.mqt();
+    auto [v0, pZero, v1, pOne] = dd->measureOneQubit(e, target);
+    return {QState{v0}, Prob{pZero}, QState{v1}, Prob{pOne}};
 }
 
 qc::VectorDD DDSimulation::project(qc::MatrixDD projector, qc::VectorDD v) {
     return dd->multiply(projector, v);
 }
 
-bool DDSimulation::test(qc::VectorDD v, ExpNode *expNode) {
-    if (auto *boolExp = dynamic_cast<BoolExpNode *>(expNode)) {
-        if (boolExp->getVal() == BoolType::TRUE) {
-            return true;
-        } else if (boolExp->getVal() == BoolType::FALSE) {
-            return false;
-        } else {
-            throw std::runtime_error("Unsupported boolean expression");
-        }
+bool DDSimulation::testProp(const QState &v, PropExpNode *propNode) {
+    auto projector = projectorMap[propNode];
+    auto v1 = dd->multiply(projector, v.mqt());
+    if (v.mqt().p == v1.p) {
+        return true;
     }
-    if (auto *propNode = dynamic_cast<PropExpNode *>(expNode)) {
-        auto projector = projectorMap[propNode];
-        auto v1 = dd->multiply(projector, v);
-        if (v.p == v1.p) {
-            return true;
-        }
-        return false;
-        // todo: should check structure similarity during checking fidelity for fast comparison
-        // auto fd = dd->fidelity(v1, v);
-        // std::cout << "Fidelity: " << fd << std::endl;
-        // return std::abs(fd - 1) < Configuration::fidelityThreshold;
-    }
-    if (auto *opExpNode = dynamic_cast<OpExpNode *>(expNode)) {
-        switch (opExpNode->getType()) {
-            case OpExpType::NOT:
-                return not test(v, opExpNode->getRight());
-            case OpExpType::AND:
-                if (test(v, opExpNode->getLeft())) {
-                    return test(v, opExpNode->getRight());
-                }
-                return false;
-            case OpExpType::OR:
-                if (test(v, opExpNode->getLeft())) {
-                    return true;
-                }
-                return test(v, opExpNode->getRight());
-            default:
-                throw std::runtime_error("Unsupported property type");
-        }
-    }
-    throw std::runtime_error("Unsupported expression type");
+    return false;
+    // todo: should check structure similarity during checking fidelity for fast comparison
+    // auto fd = dd->fidelity(v1, v);
+    // std::cout << "Fidelity: " << fd << std::endl;
+    // return std::abs(fd - 1) < Configuration::fidelityThreshold;
 }
 
 qc::fp DDSimulation::fidelity(qc::VectorDD v1, qc::VectorDD v2) {
     return dd->fidelity(v1, v2);
+}
+
+void DDSimulation::printState(const QState &v) const {
+    v.mqt().printVector<dd::vNode>();
+}
+
+std::string DDSimulation::basisProb(const QState &v, const std::string &basis) const {
+    const auto c = v.mqt().getValueByPath(nqubits, basis);
+    std::ostringstream os;
+    os << std::norm(c);
+    return os.str();
+}
+
+std::string DDSimulation::basisAmplitude(const QState &v, const std::string &basis) const {
+    const auto c = v.mqt().getValueByPath(nqubits, basis);
+    std::ostringstream os;
+    os << c;
+    return os.str();
 }
 
 void DDSimulation::dump() {

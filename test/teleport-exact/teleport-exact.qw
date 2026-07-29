@@ -1,0 +1,28 @@
+set show timing off .
+set random seed 0 .
+set backend dw .
+
+prog TELEPORT is
+var q0, q1, q2 : qubit;
+init
+    q0 := random;
+    q1 := |0>;
+    q2 := |0>;
+prop
+    target := P(q2, init[q0]);
+begin
+    atomic {
+        H[q1];
+        CX[q1, q2];
+        CX[q0, q1];
+        H[q0];
+    };
+    if M[q1] = 1 then X[q2]; else skip; fi;
+    if M[q0] = 1 then Z[q2]; else skip; fi;
+end
+
+search in TELEPORT with =>! such that P(q2, init[q0]) .
+
+psearch in TELEPORT with =>! such that P(q2, init[q0]) .
+
+quit .

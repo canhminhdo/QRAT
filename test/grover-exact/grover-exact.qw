@@ -1,0 +1,167 @@
+set show timing off .
+set random seed 0 .
+set backend dw .
+
+// #qubit: 5, marked state: 00011, #iterations: 4
+prog GROVER is
+var q0, q1, q2, q3, q4 : qubit;
+prop
+	target := P(q0, |1>) and P(q1, |1>) and P(q2, |0>) and P(q3, |0>) and P(q4, |0>);
+begin
+	atomic {
+	// initialize superposition qubits
+	H[q0];
+	H[q1];
+	H[q2];
+	H[q3];
+	H[q4];
+	// oracle
+	X[q2];
+	X[q3];
+	X[q4];
+	H[q4];
+	MCX[q0, q1, q2, q3, q4];
+	H[q4];
+	X[q2];
+	X[q3];
+	X[q4];
+	// diffusion
+	H[q0];
+	H[q1];
+	H[q2];
+	H[q3];
+	H[q4];
+	X[q0];
+	X[q1];
+	X[q2];
+	X[q3];
+	X[q4];
+	H[q4];
+	MCX[q0, q1, q2, q3, q4];
+	H[q4];
+	X[q0];
+	X[q1];
+	X[q2];
+	X[q3];
+	X[q4];
+	H[q0];
+	H[q1];
+	H[q2];
+	H[q3];
+	H[q4];
+	// oracle
+	X[q2];
+	X[q3];
+	X[q4];
+	H[q4];
+	MCX[q0, q1, q2, q3, q4];
+	H[q4];
+	X[q2];
+	X[q3];
+	X[q4];
+	// diffusion
+	H[q0];
+	H[q1];
+	H[q2];
+	H[q3];
+	H[q4];
+	X[q0];
+	X[q1];
+	X[q2];
+	X[q3];
+	X[q4];
+	H[q4];
+	MCX[q0, q1, q2, q3, q4];
+	H[q4];
+	X[q0];
+	X[q1];
+	X[q2];
+	X[q3];
+	X[q4];
+	H[q0];
+	H[q1];
+	H[q2];
+	H[q3];
+	H[q4];
+	// oracle
+	X[q2];
+	X[q3];
+	X[q4];
+	H[q4];
+	MCX[q0, q1, q2, q3, q4];
+	H[q4];
+	X[q2];
+	X[q3];
+	X[q4];
+	// diffusion
+	H[q0];
+	H[q1];
+	H[q2];
+	H[q3];
+	H[q4];
+	X[q0];
+	X[q1];
+	X[q2];
+	X[q3];
+	X[q4];
+	H[q4];
+	MCX[q0, q1, q2, q3, q4];
+	H[q4];
+	X[q0];
+	X[q1];
+	X[q2];
+	X[q3];
+	X[q4];
+	H[q0];
+	H[q1];
+	H[q2];
+	H[q3];
+	H[q4];
+	// oracle
+	X[q2];
+	X[q3];
+	X[q4];
+	H[q4];
+	MCX[q0, q1, q2, q3, q4];
+	H[q4];
+	X[q2];
+	X[q3];
+	X[q4];
+	// diffusion
+	H[q0];
+	H[q1];
+	H[q2];
+	H[q3];
+	H[q4];
+	X[q0];
+	X[q1];
+	X[q2];
+	X[q3];
+	X[q4];
+	H[q4];
+	MCX[q0, q1, q2, q3, q4];
+	H[q4];
+	X[q0];
+	X[q1];
+	X[q2];
+	X[q3];
+	X[q4];
+	H[q0];
+	H[q1];
+	H[q2];
+	H[q3];
+	H[q4];
+	};
+	// measure all qubits
+	if M[q0] = 1 then skip; else skip; fi;
+	if M[q1] = 1 then skip; else skip; fi;
+	if M[q2] = 1 then skip; else skip; fi;
+	if M[q3] = 1 then skip; else skip; fi;
+	if M[q4] = 1 then skip; else skip; fi;
+end
+
+search in GROVER with =>! such that P(q0, |1>) and P(q1, |1>) and P(q2, |0>) and P(q3, |0>) and P(q4, |0>) .
+
+psearch in GROVER with =>! such that P(q0, |1>) and P(q1, |1>) and P(q2, |0>) and P(q3, |0>) and P(q4, |0>) .
+
+quit .

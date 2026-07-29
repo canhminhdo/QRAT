@@ -1,0 +1,8 @@
+Show timing is off.
+Random seed is set to 0.
+Simulation backend is set to exact.
+==========================================
+prog RXTEST
+[31mError: gate 'rx' is not supported by the exact backend (Clifford+T only: i, x, y, z, h, s, sdg, t, tdg, v, vdg, sx, sxdg, swap, iswap, iswapdg, dcx, and their controlled variants). Switch back with 'set backend mqt .'[0m
+[31mError: no simulation available[0m
+Bye.

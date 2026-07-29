@@ -3,6 +3,11 @@ add_subdirectory(
     "extern/mqt-core"
     EXCLUDE_FROM_ALL)
 
+add_subdirectory(
+    "${PROJECT_SOURCE_DIR}/extern/exact-dd"
+    "extern/exact-dd"
+    EXCLUDE_FROM_ALL)
+
 # COPY FILE
 configure_file(prog.qw prog.qw)
 configure_file(prog-loop.qw prog-loop.qw)
@@ -53,7 +58,10 @@ add_library(
     ../ast/CondExpNode.cpp
     ../ast/CondStmNode.cpp
     ../ast/WhileStmNode.cpp
-    ../dd/DDSimulation.cpp
+    ../dd/SimulationBase.cpp
+    ../dd/mqt/DDSimulation.cpp
+    ../dd/exact/DwSimulation.cpp
+    ../dd/SimulationFactory.cpp
     ../ast/CachedNode.cpp
     ../ast/EndStmNode.cpp
     ../core/SearchGraph.cpp
@@ -73,4 +81,4 @@ add_library(
 target_include_directories(Parser PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 #link the flex library if using default functions yywrap() and main()
 #target_link_libraries(Parser PUBLIC ${FLEX_LIBRARIES})
-target_link_libraries(Parser PUBLIC MQT::CoreDD)
+target_link_libraries(Parser PUBLIC MQT::CoreDD ExactDD)

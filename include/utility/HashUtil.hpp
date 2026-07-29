@@ -8,7 +8,7 @@
 class HashUtil {
 public:
     static std::size_t combinedHash(std::size_t hash1, std::size_t hash2) {
-        hash1 ^= hash2 + 0x9e3779b9 + (hash1 << 6) + (hash1 >> 2);
+        hash1 ^= hash2 + 0x9e3779b97f4a7c15ULL + (hash1 << 6) + (hash1 >> 2);
         return hash1;
     }
 };
