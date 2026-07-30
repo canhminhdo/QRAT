@@ -1,0 +1,22 @@
+Show timing is off.
+Random seed is set to 0.
+==========================================
+prog RUS
+==========================================
+search in RUS with =>! such that P(a, |0>) .
+
+Solution 1 (state 2)
+states: 3
+quantum state: 
+00: (0.917,-0.326)
+10: (0.0772,-0.217)
+
+No more solutions.
+states: 4
+==========================================
+psearch in RUS with =>! such that P(a, |0>) .
+
+Result: 1
+
+states: 4
+Bye.

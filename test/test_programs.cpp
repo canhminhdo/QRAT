@@ -24,12 +24,17 @@ TEST(ProgTest, loopProg) {
     EXPECT_EQ(res, 0);
 }
 
+TEST(ProgTest, rusProg) {
+    int res = std::system("bash testScript.sh rus");
+    EXPECT_EQ(res, 0);
+}
+
 TEST(ProgTest, groverProg) {
     int res = std::system("bash testScript.sh grover");
     EXPECT_EQ(res, 0);
 }
 
-// exact backen
+// exact backend
 
 TEST(ProgTest, teleportExactProg) {
     int res = std::system("bash testScript.sh teleport-exact");
@@ -38,6 +43,11 @@ TEST(ProgTest, teleportExactProg) {
 
 TEST(ProgTest, loopExactProg) {
     int res = std::system("bash testScript.sh loop-exact");
+    EXPECT_EQ(res, 0);
+}
+
+TEST(ProgTest, rusExactProg) {
+    int res = std::system("bash testScript.sh rus-exact");
     EXPECT_EQ(res, 0);
 }
 

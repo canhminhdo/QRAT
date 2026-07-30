@@ -1,0 +1,23 @@
+Show timing is off.
+Random seed is set to 0.
+Simulation backend is set to exact.
+==========================================
+prog RUS
+==========================================
+search in RUS with =>! such that P(a, |0>) .
+
+Solution 1 (state 2)
+states: 3
+quantum state: 
+00: (2 + 1*w + -1*w^2 + 2*w^3) / (sqrt(2)^5 * 1)
+10: (2 + 1*w + 1*w^2 + -2*w^3) / (sqrt(2)^5 * 1)
+
+No more solutions.
+states: 4
+==========================================
+psearch in RUS with =>! such that P(a, |0>) .
+
+Result: (1 + 0*w + 0*w^2 + 0*w^3) / (sqrt(2)^0 * 1) (approx. 1)
+
+states: 4
+Bye.

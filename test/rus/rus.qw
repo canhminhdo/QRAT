@@ -1,0 +1,39 @@
+set show timing off .
+set random seed 0 .
+
+prog RUS is
+var a, q : qubit;
+init
+    a := |0>;
+    q := random;
+prop
+    success := P(a, |0>);
+begin
+    atomic {
+    H[a]; T[a]; H[a];
+    CZ[a, q];
+    Tdg[a];
+    H[a]; T[a];
+    CZ[a, q];
+    Z[q];
+    H[a]; T[a]; H[a];
+    };
+    while M[a] = 1 do
+        atomic {
+        X[a];
+        H[a]; T[a]; H[a];
+        CZ[a, q];
+        Tdg[a];
+        H[a]; T[a];
+        CZ[a, q];
+        Z[q];
+        H[a]; T[a]; H[a];
+        };
+    od;
+end
+
+search in RUS with =>! such that P(a, |0>) .
+
+psearch in RUS with =>! such that P(a, |0>) .
+
+quit .

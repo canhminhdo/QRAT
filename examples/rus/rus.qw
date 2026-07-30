@@ -1,0 +1,35 @@
+// Repeat-Until-Success circuit for V3 = (I+2iZ)/sqrt(5), Fig. 9 of
+// Paetznick & Svore, "Repeat-Until-Success: Non-deterministic decomposition
+// of single-qubit unitaries", arXiv:1311.1074
+prog RUS is
+var a, q : qubit;
+init
+    a := |0>;
+    q := random;
+begin
+    atomic {
+    H[a]; T[a]; H[a];
+    CZ[a, q];
+    Tdg[a];
+    H[a]; T[a];
+    CZ[a, q];
+    Z[q];
+    H[a]; T[a]; H[a];
+    };
+    while M[a] = 1 do
+        atomic {
+        X[a];
+        H[a]; T[a]; H[a];
+        CZ[a, q];
+        Tdg[a];
+        H[a]; T[a];
+        CZ[a, q];
+        Z[q];
+        H[a]; T[a]; H[a];
+        };
+    od;
+end
+
+psearch in RUS with =>! such that P(a, |0>) .
+
+quit .
